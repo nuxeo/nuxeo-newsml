@@ -1,0 +1,13 @@
+<component name="org.nuxeo.newsml.listener.listener.contrib.NewsMLPropertiesUpdater">
+
+  <extension target="org.nuxeo.ecm.core.event.EventServiceComponent"
+    point="listener">
+
+    <listener name="newsmlpropertiesupdater" async="false" postCommit="false"
+      class="org.nuxeo.newsml.listener.NewsMLPropertiesUpdater" order="100">
+      <event>aboutToCreate</event>
+      <event>beforeDocumentModification </event>
+    </listener>
+  </extension>
+
+</component>

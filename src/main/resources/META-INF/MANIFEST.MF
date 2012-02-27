@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-Vendor: Nuxeo
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Bundle-Version: 5.6.qualifier
+Bundle-Name: nuxeo-newsml
+Nuxeo-Component: OSGI-INF/extensions/org.nuxeo.newsml.listener.NewsMLP
+ ropertiesUpdater.xml
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: nuxeo-newsml
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+
