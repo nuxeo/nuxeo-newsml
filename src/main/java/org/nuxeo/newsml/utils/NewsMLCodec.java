@@ -189,9 +189,8 @@ public class NewsMLCodec {
         NodeList bodyNodeChildren = bodyNode.getChildNodes();
         for (int i = 0; i < bodyNodeChildren.getLength(); i++) {
             Node child = bodyNodeChildren.item(i);
-            if ("body.content".equals(child.getLocalName())) {
+            if ("body.content".equals(child.getNodeName())) {
                 bodyNode.removeChild(child);
-                break;
             }
         }
         // insert the new "body.content" tag with the parsed nodes as children
@@ -276,7 +275,11 @@ public class NewsMLCodec {
             if (content != null) {
                 String newsMLContent = propertiesToXML(doc, content.getStream());
                 Blob newsMLBlob = StreamingBlob.createFromString(newsMLContent);
-                newsMLBlob.setFilename(content.getFilename());
+                String filename = content.getFilename();
+                if (filename == null || filename.trim().isEmpty()) {
+                    filename = doc.getName() + ".xml";
+                }
+                newsMLBlob.setFilename(filename);
                 newsMLBlob.setMimeType("application/xml");
                 doc.setPropertyValue(newsmlBlobProperty,
                         (Serializable) newsMLBlob);
