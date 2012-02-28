@@ -36,7 +36,9 @@
         <layout>heading</layout>
         <layout>note</layout>
         <layout>file</layout>
-        <layout>dublincore</layout>
+      </layouts>
+      <layouts mode="summary">
+        <layout>note_summary_layout</layout>
       </layouts>
       <layouts mode="edit">
         <layout>heading</layout>
@@ -44,10 +46,22 @@
         <layout>file</layout>
         <layout>dublincore</layout>
       </layouts>
-      <layouts mode="create">
-        <layout>heading</layout>
+      <layouts mode="view">
         <layout>note</layout>
+        <layout>file</layout>
       </layouts>
+    </type>
+
+    <type id="Workspace">
+      <subtypes>
+        <type>NewsML</type>
+      </subtypes>
+    </type>
+
+    <type id="Folder">
+      <subtypes>
+        <type>NewsML</type>
+      </subtypes>
     </type>
 
   </extension>

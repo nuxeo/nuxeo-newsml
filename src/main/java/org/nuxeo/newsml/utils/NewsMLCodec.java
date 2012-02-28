@@ -4,17 +4,30 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.htmlcleaner.DomSerializer;
+import org.htmlcleaner.HtmlCleaner;
+import org.htmlcleaner.TagNode;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.ClientException;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -25,9 +38,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.bootstrap.DOMImplementationRegistry;
-import org.w3c.dom.ls.DOMImplementationLS;
-import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.SAXException;
 
 /**
@@ -35,13 +45,14 @@ import org.xml.sax.SAXException;
  */
 public class NewsMLCodec {
 
+    @SuppressWarnings("unused")
+    private static final Log log = LogFactory.getLog(NewsMLCodec.class);
+
     private static final String DEFAULT_NEWSML_MATRIX_XML = "/newsml/newsml-1.2-matrix.xml";
 
     protected DocumentBuilder builder;
 
     protected XPath xpath;
-
-    protected LSSerializer writer;
 
     private String newsmlBlobProperty;
 
@@ -63,9 +74,6 @@ public class NewsMLCodec {
         XPathFactory xFactory = XPathFactory.newInstance();
         xpath = xFactory.newXPath();
 
-        DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
-        DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
-        writer = impl.createLSSerializer();
         if (mapping == null) {
             // TODO build a default mapping here
         }
@@ -75,7 +83,8 @@ public class NewsMLCodec {
 
     public void propertiesFromXML(DocumentModel doc, InputStream xml)
             throws IOException, SAXException, XPathExpressionException,
-            PropertyException, ClientException {
+            PropertyException, ClientException,
+            TransformerFactoryConfigurationError, TransformerException {
         if (xml == null) {
             xml = getDefaultNewMLStream();
         }
@@ -88,7 +97,9 @@ public class NewsMLCodec {
 
     public String propertiesToXML(DocumentModel doc, InputStream xmlMatrixStream)
             throws IOException, SAXException, XPathExpressionException,
-            PropertyException, ClientException {
+            PropertyException, ClientException,
+            TransformerFactoryConfigurationError, TransformerException,
+            ParserConfigurationException {
         if (xmlMatrixStream == null) {
             xmlMatrixStream = getDefaultNewMLStream();
         }
@@ -97,7 +108,27 @@ public class NewsMLCodec {
         // TODO: implement regular properties here
 
         bodyToXML(doc, htmlBodyProperty, domDoc);
-        return writer.writeToString(domDoc);
+        // return writer.writeToString(domDoc);
+        return serialize(domDoc);
+    }
+
+    protected String serialize(Document doc)
+            throws TransformerConfigurationException,
+            TransformerFactoryConfigurationError, TransformerException {
+        return serialize(new DOMSource(doc));
+    }
+
+    protected String serialize(Element element)
+            throws TransformerFactoryConfigurationError, TransformerException {
+        return serialize(new DOMSource(element));
+    }
+
+    protected String serialize(DOMSource source)
+            throws TransformerFactoryConfigurationError, TransformerException {
+        StringWriter output = new StringWriter();
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.transform(source, new StreamResult(output));
+        return output.toString();
     }
 
     public Document getDefaultNewMLDomDocument() throws IOException,
@@ -118,18 +149,19 @@ public class NewsMLCodec {
 
     public String propertiesToXML(DocumentModel doc)
             throws XPathExpressionException, IOException, SAXException,
-            PropertyException, ClientException {
+            PropertyException, ClientException,
+            TransformerFactoryConfigurationError, TransformerException,
+            ParserConfigurationException {
         return propertiesToXML(doc, getDefaultNewMLStream());
     }
 
     /**
      * @param bodyPath of a String or Blob property holding the HTML source to
      *            parse and insert as a body of the NewsML DOM document.
-     * @return true is the body property of doc is valid XHTML, else false
      */
-    public boolean bodyToXML(DocumentModel doc, String bodyPath, Document domDoc)
+    public void bodyToXML(DocumentModel doc, String bodyPath, Document domDoc)
             throws XPathExpressionException, PropertyException,
-            ClientException, IOException {
+            ClientException, IOException, ParserConfigurationException {
         // fetch the String representation from the document
         NodeList newBodyNodeList = domDoc.createElement("tmp").getChildNodes();
         if (doc.getPropertyValue(bodyPath) != null) {
@@ -143,13 +175,11 @@ public class NewsMLCodec {
                         bodyPath).toString().getBytes("utf-8"));
             }
             // parse the string body as a DOM node
-            try {
-                Document bodyDoc = builder.parse(bodyStream);
-                NodeList bodyNodes = bodyDoc.getChildNodes();
-                newBodyNodeList = cleanHtmlWrapperElements(bodyNodes, bodyDoc);
-            } catch (SAXException e) {
-                return false;
-            }
+            final HtmlCleaner cleaner = new HtmlCleaner();
+            TagNode cleaned = cleaner.clean(bodyStream);
+            Document bodyDoc = new DomSerializer(cleaner.getProperties(), true).createDOM(cleaned);
+            NodeList bodyNodes = bodyDoc.getChildNodes();
+            newBodyNodeList = cleanHtmlWrapperElements(bodyNodes, bodyDoc);
         }
         XPathExpression expr = xpath.compile("//body");
         // XXX: assume that there is only one ContentItem in the NewsML document
@@ -171,7 +201,6 @@ public class NewsMLCodec {
             bodyContent.appendChild(importedNode);
         }
         bodyNode.appendChild(bodyContent);
-        return true;
     }
 
     protected NodeList cleanHtmlWrapperElements(NodeList bodyNodes, Document doc) {
@@ -198,7 +227,9 @@ public class NewsMLCodec {
     }
 
     public void bodyFromXML(DocumentModel doc, String bodyPath, Document domDoc)
-            throws XPathExpressionException, PropertyException, ClientException {
+            throws XPathExpressionException, PropertyException,
+            ClientException, TransformerFactoryConfigurationError,
+            TransformerException {
         XPathExpression expr = xpath.compile("//body/body.content");
         // XXX: assume that there is only one ContentItem in the NewsML document
         Node bodyContentNode = (Node) expr.evaluate(domDoc, XPathConstants.NODE);
@@ -215,7 +246,7 @@ public class NewsMLCodec {
                 htmlBodyNode.appendChild(importedNode);
             }
         }
-        String htmlString = writer.writeToString(htmlNode);
+        String htmlString = serialize(htmlNode);
 
         // check whether this payload should be wrapped into a blob or not
         Property property = doc.getProperty(bodyPath);
@@ -230,7 +261,9 @@ public class NewsMLCodec {
 
     public void synchronizeProperties(DocumentModel doc)
             throws PropertyException, ClientException, IOException,
-            XPathExpressionException, SAXException {
+            XPathExpressionException, SAXException,
+            TransformerFactoryConfigurationError, TransformerException,
+            ParserConfigurationException {
         if (!doc.hasFacet("HasNewsMLWriteBack")) {
             return;
         }
@@ -250,7 +283,7 @@ public class NewsMLCodec {
             } else {
                 String newsMLContent = propertiesToXML(doc);
                 Blob newsMLBlob = StreamingBlob.createFromString(newsMLContent);
-                newsMLBlob.setFilename("newsml-" + doc.getName() + ".xml");
+                newsMLBlob.setFilename(doc.getName() + ".xml");
                 newsMLBlob.setMimeType("application/xml");
                 doc.setPropertyValue(newsmlBlobProperty,
                         (Serializable) newsMLBlob);

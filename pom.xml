@@ -9,8 +9,12 @@
   <groupId>org.nuxeo</groupId>
   <artifactId>nuxeo-newsml</artifactId>
   <name>nuxeo-newsml</name>
-  <description/>
   <dependencies>
+    <dependency>
+      <groupId>net.sourceforge.htmlcleaner</groupId>
+      <artifactId>htmlcleaner</artifactId>
+      <version>2.2</version>
+    </dependency>
     <dependency>
       <groupId>org.nuxeo.common</groupId>
       <artifactId>nuxeo-common</artifactId>

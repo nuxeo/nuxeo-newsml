@@ -1,7 +1,6 @@
 package org.nuxeo.newsml.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -69,25 +68,26 @@ public class TestNewsMLCode {
         Document newsMLDom = codec.getDefaultNewMLDomDocument();
         assertNotNull(newsMLDom);
 
-        assertTrue(codec.bodyToXML(note, "note:note", newsMLDom));
+        codec.bodyToXML(note, "note:note", newsMLDom);
         String updatedNewsML = writer.writeToString(newsMLDom);
         assertTrue(updatedNewsML.contains("<body.content><p>Content stuff</p>"
                 + "</body.content>"));
 
         // let's try without the boilerplate:
-        note.setPropertyValue("note:note", "<p>Content stuff</p>");
+        note.setPropertyValue("note:note", "<p>Content stuff.</p>");
         newsMLDom = codec.getDefaultNewMLDomDocument();
-        assertTrue(codec.bodyToXML(note, "note:note", newsMLDom));
+        codec.bodyToXML(note, "note:note", newsMLDom);
         updatedNewsML = writer.writeToString(newsMLDom);
-        assertTrue(updatedNewsML.contains("<body.content><p>Content stuff</p>"
+        assertTrue(updatedNewsML.contains("<body.content><p>Content stuff.</p>"
                 + "</body.content>"));
 
-        // NewsML doc is untouched if the body is not valid
-        note.setPropertyValue("note:note", "<p>Invalid content</div>");
+        // HTML handling is tolerant
+        note.setPropertyValue("note:note", "<p>Invalid content.</div>");
         newsMLDom = codec.getDefaultNewMLDomDocument();
-        assertFalse(codec.bodyToXML(note, "note:note", newsMLDom));
+        codec.bodyToXML(note, "note:note", newsMLDom);
         updatedNewsML = writer.writeToString(newsMLDom);
-        assertTrue(updatedNewsML.contains("<body.content/>"));
+        assertTrue(updatedNewsML.contains("<body.content><p>Invalid content.</p>"
+                + "</body.content>"));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class TestNewsMLCode {
         Blob newsmlBlob = newsmlDoc.getProperty("file:content").getValue(
                 Blob.class);
         assertEquals("application/xml", newsmlBlob.getMimeType());
-        assertEquals("newsml-some-article.xml", newsmlBlob.getFilename());
+        assertEquals("some-article.xml", newsmlBlob.getFilename());
         assertTrue(newsmlBlob.getString().contains("<p>Some content.</p>"));
     }
 }
