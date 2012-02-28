@@ -4,7 +4,6 @@
 
 package org.nuxeo.newsml.listener;
 
-import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.ClientException;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.event.Event;
@@ -28,14 +27,9 @@ public class NewsMLPropertiesUpdater implements EventListener {
             return;
         }
         DocumentModel doc = context.getSourceDocument();
-        Blob content = (Blob) doc.getPropertyValue("file:content");
         try {
             NewsMLCodec codec = new NewsMLCodec();
-            if (content != null && content.getMimeType().equals("text/xml")
-                    && doc.getProperty("file:content").isDirty()) {
-                // update the properties by parsing the blob content if not null
-                codec.propertiesFromXML(doc, content.getStream());
-            }
+            codec.synchronizeProperties(doc);
         } catch (Exception e) {
             throw new ClientException(e);
         }

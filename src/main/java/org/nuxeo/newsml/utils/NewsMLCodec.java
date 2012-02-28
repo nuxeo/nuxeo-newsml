@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,7 +43,18 @@ public class NewsMLCodec {
 
     protected LSSerializer writer;
 
+    private String newsmlBlobProperty;
+
+    protected String htmlBodyProperty;
+
     public NewsMLCodec() throws ParserConfigurationException,
+            ClassCastException, ClassNotFoundException, InstantiationException,
+            IllegalAccessException {
+        this(null, "file:content", "note:note");
+    }
+
+    public NewsMLCodec(Map<String, String> mapping, String newMLBlobProperty,
+            String htmlBodyProperty) throws ParserConfigurationException,
             ClassCastException, ClassNotFoundException, InstantiationException,
             IllegalAccessException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -54,22 +66,37 @@ public class NewsMLCodec {
         DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
         DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
         writer = impl.createLSSerializer();
+        if (mapping == null) {
+            // TODO build a default mapping here
+        }
+        this.newsmlBlobProperty = newMLBlobProperty;
+        this.htmlBodyProperty = htmlBodyProperty;
     }
 
-    public void propertiesFromXML(DocumentModel doc, InputStream xml) {
-        // TODO Auto-generated method stub
+    public void propertiesFromXML(DocumentModel doc, InputStream xml)
+            throws IOException, SAXException, XPathExpressionException,
+            PropertyException, ClientException {
+        if (xml == null) {
+            xml = getDefaultNewMLStream();
+        }
+        Document domDoc = builder.parse(xml);
 
+        // TODO: impement regular properies here
+
+        bodyFromXML(doc, htmlBodyProperty, domDoc);
     }
 
     public String propertiesToXML(DocumentModel doc, InputStream xmlMatrixStream)
-            throws IOException, SAXException, XPathExpressionException {
+            throws IOException, SAXException, XPathExpressionException,
+            PropertyException, ClientException {
         if (xmlMatrixStream == null) {
             xmlMatrixStream = getDefaultNewMLStream();
         }
         Document domDoc = builder.parse(xmlMatrixStream);
 
-        // TODO: implement me!
+        // TODO: implement regular properties here
 
+        bodyToXML(doc, htmlBodyProperty, domDoc);
         return writer.writeToString(domDoc);
     }
 
@@ -89,8 +116,10 @@ public class NewsMLCodec {
         return xmlMatrixStream;
     }
 
-    public String propertiesToXML(DocumentModel doc) {
-        return propertiesToXML(doc);
+    public String propertiesToXML(DocumentModel doc)
+            throws XPathExpressionException, IOException, SAXException,
+            PropertyException, ClientException {
+        return propertiesToXML(doc, getDefaultNewMLStream());
     }
 
     /**
@@ -197,6 +226,45 @@ public class NewsMLCodec {
         } else {
             doc.setPropertyValue(bodyPath, htmlString);
         }
+    }
+
+    public void synchronizeProperties(DocumentModel doc)
+            throws PropertyException, ClientException, IOException,
+            XPathExpressionException, SAXException {
+        if (!doc.hasFacet("HasNewsMLWriteBack")) {
+            return;
+        }
+        Blob content = (Blob) doc.getPropertyValue(newsmlBlobProperty);
+        if (content != null && content.getMimeType().equals("text/xml")
+                && doc.getProperty(newsmlBlobProperty).isDirty()) {
+            // update the properties by parsing the blob content if not null
+            propertiesFromXML(doc, content.getStream());
+        } else if (hasDirtyNewsMLProperties(doc)) {
+            if (content != null) {
+                String newsMLContent = propertiesToXML(doc, content.getStream());
+                Blob newsMLBlob = StreamingBlob.createFromString(newsMLContent);
+                newsMLBlob.setFilename(content.getFilename());
+                newsMLBlob.setMimeType("application/xml");
+                doc.setPropertyValue(newsmlBlobProperty,
+                        (Serializable) newsMLBlob);
+            } else {
+                String newsMLContent = propertiesToXML(doc);
+                Blob newsMLBlob = StreamingBlob.createFromString(newsMLContent);
+                newsMLBlob.setFilename("newsml-" + doc.getName() + ".xml");
+                newsMLBlob.setMimeType("application/xml");
+                doc.setPropertyValue(newsmlBlobProperty,
+                        (Serializable) newsMLBlob);
+            }
+        }
+    }
+
+    /**
+     * Checked whether at least on document property mapped to NewsML has been
+     * modified.
+     */
+    public boolean hasDirtyNewsMLProperties(DocumentModel doc) {
+        // TODO implement me
+        return true;
     }
 
 }

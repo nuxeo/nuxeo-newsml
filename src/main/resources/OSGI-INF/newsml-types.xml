@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<component name="org.nuxeo.newsml.types" version="1.0">
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService"
+    point="doctype">
+
+    <facet name="HasNewsMLWriteBack">
+      <schema name="note" />
+    </facet>
+
+    <doctype name="NewsML" extends="File">
+      <facet name="HasNewsMLWriteBack" />
+    </doctype>
+
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.lifecycle.LifeCycleService"
+    point="types">
+    <types>
+      <type name="NewsML">default</type>
+    </types>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.platform.types.TypeService" point="types">
+
+    <type id="NewsML">
+      <label>NewsML Article</label>
+      <icon>/icons/note.png</icon>
+      <bigIcon>/icons/note_100.png</bigIcon>
+      <icon-expanded>/icons/note.png</icon-expanded>
+      <category>SimpleDocument</category>
+      <description>NewsML.description</description>
+      <default-view>view_documents</default-view>
+      <layouts mode="any">
+        <layout>heading</layout>
+        <layout>note</layout>
+        <layout>file</layout>
+        <layout>dublincore</layout>
+      </layouts>
+      <layouts mode="edit">
+        <layout>heading</layout>
+        <layout>note</layout>
+        <layout>file</layout>
+        <layout>dublincore</layout>
+      </layouts>
+      <layouts mode="create">
+        <layout>heading</layout>
+        <layout>note</layout>
+      </layouts>
+    </type>
+
+  </extension>
+
+</component>

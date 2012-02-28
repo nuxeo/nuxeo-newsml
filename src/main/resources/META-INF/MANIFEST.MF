@@ -5,8 +5,8 @@ Bundle-ClassPath: .
 Bundle-Version: 5.6.qualifier
 Bundle-Name: nuxeo-newsml
 Nuxeo-Component: OSGI-INF/extensions/org.nuxeo.newsml.listener.NewsMLP
- ropertiesUpdater.xml
+ ropertiesUpdater.xml,OSGI-INF/newsml-types.xml
 Bundle-ManifestVersion: 2
-Bundle-SymbolicName: nuxeo-newsml
+Bundle-SymbolicName: org.nuxeo.newsml
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 
