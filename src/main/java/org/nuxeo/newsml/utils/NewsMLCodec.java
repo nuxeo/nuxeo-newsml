@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -50,6 +51,8 @@ public class NewsMLCodec {
 
     private static final String DEFAULT_NEWSML_MATRIX_XML = "/newsml/newsml-1.2-matrix.xml";
 
+    public static final String SINGLETON_LANG_TEXT_NODE = "singltonLangTextNode";
+
     protected DocumentBuilder builder;
 
     protected XPath xpath;
@@ -58,13 +61,15 @@ public class NewsMLCodec {
 
     protected String htmlBodyProperty;
 
+    protected Map<String, String[]> mapping;
+
     public NewsMLCodec() throws ParserConfigurationException,
             ClassCastException, ClassNotFoundException, InstantiationException,
             IllegalAccessException {
         this(null, "file:content", "note:note");
     }
 
-    public NewsMLCodec(Map<String, String> mapping, String newMLBlobProperty,
+    public NewsMLCodec(Map<String, String[]> mapping, String newMLBlobProperty,
             String htmlBodyProperty) throws ParserConfigurationException,
             ClassCastException, ClassNotFoundException, InstantiationException,
             IllegalAccessException {
@@ -75,8 +80,12 @@ public class NewsMLCodec {
         xpath = xFactory.newXPath();
 
         if (mapping == null) {
-            // TODO build a default mapping here
+            mapping = new HashMap<String, String[]>();
+            mapping.put("dc:title", new String[] {
+                    "/NewsML/NewsItem/NewsComponent/NewsLines/HeadLine",
+                    SINGLETON_LANG_TEXT_NODE });
         }
+        this.mapping = mapping;
         this.newsmlBlobProperty = newMLBlobProperty;
         this.htmlBodyProperty = htmlBodyProperty;
     }
@@ -89,9 +98,22 @@ public class NewsMLCodec {
             xml = getDefaultNewMLStream();
         }
         Document domDoc = builder.parse(xml);
-
-        // TODO: impement regular properies here
-
+        // synchronize the structured metadata
+        for (Map.Entry<String, String[]> mappingEntry : mapping.entrySet()) {
+            String propertyPath = mappingEntry.getKey();
+            String[] domPropertySpec = mappingEntry.getValue();
+            if (SINGLETON_LANG_TEXT_NODE.equals(domPropertySpec[1])) {
+                XPathExpression expr = xpath.compile(domPropertySpec[0]);
+                Node textNode = (Node) expr.evaluate(domDoc,
+                        XPathConstants.NODE);
+                if (textNode != null
+                        && textNode.getChildNodes().getLength() > 0) {
+                    String text = textNode.getChildNodes().item(0).getNodeValue();
+                    doc.setPropertyValue(propertyPath, text);
+                }
+            }
+        }
+        // synchronize the HTML body
         bodyFromXML(doc, htmlBodyProperty, domDoc);
     }
 
@@ -104,12 +126,49 @@ public class NewsMLCodec {
             xmlMatrixStream = getDefaultNewMLStream();
         }
         Document domDoc = builder.parse(xmlMatrixStream);
-
-        // TODO: implement regular properties here
-
+        String lang = (String) doc.getPropertyValue("dc:language");
+        // synchronize the structured metatada
+        for (Map.Entry<String, String[]> mappingEntry : mapping.entrySet()) {
+            String propertyPath = mappingEntry.getKey();
+            String[] domPropertySpec = mappingEntry.getValue();
+            if (SINGLETON_LANG_TEXT_NODE.equals(domPropertySpec[1])) {
+                String text = (String) doc.getPropertyValue(propertyPath);
+                if (text == null) {
+                    continue;
+                }
+                int lastSlash = domPropertySpec[0].lastIndexOf('/');
+                if (lastSlash <= 0) {
+                    continue;
+                }
+                String parentXpath = domPropertySpec[0].substring(0, lastSlash);
+                String nodeName = domPropertySpec[0].substring(lastSlash + 1);
+                XPathExpression expr = xpath.compile(parentXpath);
+                Node parentNode = (Node) expr.evaluate(domDoc,
+                        XPathConstants.NODE);
+                if (parentNode != null) {
+                    removeAllChildren(parentNode, nodeName);
+                    Element newNode = domDoc.createElement(nodeName);
+                    if (lang != null) {
+                        newNode.setAttribute("xml:lang", lang);
+                    }
+                    newNode.appendChild(domDoc.createTextNode(text));
+                    parentNode.appendChild(newNode);
+                }
+            }
+        }
+        // synchronize the body
         bodyToXML(doc, htmlBodyProperty, domDoc);
-        // return writer.writeToString(domDoc);
         return serialize(domDoc);
+    }
+
+    protected void removeAllChildren(Node parentNode, String tagName) {
+        NodeList children = parentNode.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (tagName.equals(child.getNodeName())) {
+                parentNode.removeChild(child);
+            }
+        }
     }
 
     protected String serialize(Document doc)
@@ -184,15 +243,7 @@ public class NewsMLCodec {
         XPathExpression expr = xpath.compile("//body");
         // XXX: assume that there is only one ContentItem in the NewsML document
         Node bodyNode = (Node) expr.evaluate(domDoc, XPathConstants.NODE);
-
-        // remove any previous "body.content" tag
-        NodeList bodyNodeChildren = bodyNode.getChildNodes();
-        for (int i = 0; i < bodyNodeChildren.getLength(); i++) {
-            Node child = bodyNodeChildren.item(i);
-            if ("body.content".equals(child.getNodeName())) {
-                bodyNode.removeChild(child);
-            }
-        }
+        removeAllChildren(bodyNode, "body.content");
         // insert the new "body.content" tag with the parsed nodes as children
         Element bodyContent = domDoc.createElement("body.content");
         for (int i = 0; i < newBodyNodeList.getLength(); i++) {

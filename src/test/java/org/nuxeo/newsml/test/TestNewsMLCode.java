@@ -154,7 +154,7 @@ public class TestNewsMLCode {
                 "<p>This is a paragraph.</p>"));
 
         assertNotNull(newsmlDoc.getPropertyValue("dc:title"));
-        assertEquals("This is a Headline.",
+        assertEquals("This is the Headline.",
                 newsmlDoc.getPropertyValue("dc:title"));
     }
 }

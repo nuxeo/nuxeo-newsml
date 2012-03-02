@@ -8,9 +8,7 @@
     <NewsManagement />
     <NewsComponent>
       <NewsLines>
-        <NewsLine>
-          <HeadLine xml:lang="en">This is the Headline.</HeadLine>
-        </NewsLine>
+        <HeadLine xml:lang="en">This is the Headline.</HeadLine>
       </NewsLines>
       <AdministrativeMetadata>
         <Provider />
