@@ -5,6 +5,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.InputStream;
+import java.io.Serializable;
+
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -16,6 +19,7 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.impl.blob.StreamingBlob;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
@@ -108,20 +112,49 @@ public class TestNewsMLCode {
     }
 
     @Test
-    public void testAutomatedSynchronization() throws Exception {
+    public void testAutomatedSynchronizationFromDocument() throws Exception {
         DocumentModel newsmlDoc = coreSession.createDocumentModel(
                 coreSession.getRootDocument().getPathAsString(),
                 "some-article", "NewsML");
+
         newsmlDoc.setPropertyValue("dc:title", "Some article");
         newsmlDoc.setPropertyValue("note:note",
                 "<html><p>Some content.</p></html>");
+
         assertNull(newsmlDoc.getPropertyValue("file:content"));
         newsmlDoc = coreSession.createDocument(newsmlDoc);
+
         assertNotNull(newsmlDoc.getPropertyValue("file:content"));
         Blob newsmlBlob = newsmlDoc.getProperty("file:content").getValue(
                 Blob.class);
         assertEquals("application/xml", newsmlBlob.getMimeType());
         assertEquals("some-article.xml", newsmlBlob.getFilename());
         assertTrue(newsmlBlob.getString().contains("<p>Some content.</p>"));
+        assertTrue(newsmlBlob.getString().contains("Some article"));
+    }
+
+    @Test
+    public void testAutomatedSynchronizationFromNewsml() throws Exception {
+        DocumentModel newsmlDoc = coreSession.createDocumentModel(
+                coreSession.getRootDocument().getPathAsString(),
+                "some-article", "NewsML");
+
+        InputStream is = getClass().getResourceAsStream("/newsml-test-file.xml");
+        Blob blob = StreamingBlob.createFromStream(is).persist();
+        blob.setFilename("newsml-test-file.xml");
+        blob.setEncoding("utf-8");
+        blob.setMimeType("application/xml");
+        newsmlDoc.setPropertyValue("file:content", (Serializable) blob);
+
+        newsmlDoc = coreSession.createDocument(newsmlDoc);
+        assertNotNull(newsmlDoc.getPropertyValue("file:content"));
+
+        assertNotNull(newsmlDoc.getPropertyValue("note:note"));
+        assertTrue(newsmlDoc.getPropertyValue("note:note").toString().contains(
+                "<p>This is a paragraph.</p>"));
+
+        assertNotNull(newsmlDoc.getPropertyValue("dc:title"));
+        assertEquals("This is a Headline.",
+                newsmlDoc.getPropertyValue("dc:title"));
     }
 }

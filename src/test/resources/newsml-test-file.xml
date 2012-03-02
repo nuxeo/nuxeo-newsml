@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NewsML Version="1.2">
+  <NewsEnvelope />
+  <NewsItem xml:lang="en">
+    <Identification>
+      <NewsIdentifier />
+    </Identification>
+    <NewsManagement />
+    <NewsComponent>
+      <NewsLines>
+        <NewsLine>
+          <HeadLine xml:lang="en">This is the Headline.</HeadLine>
+        </NewsLine>
+      </NewsLines>
+      <AdministrativeMetadata>
+        <Provider />
+      </AdministrativeMetadata>
+      <DescriptiveMetadata>
+        <SubjectCode />
+        <Location HowPresent="Origin" />
+        <Property FormalName="GeneratorSoftware" Value="Nuxeo" />
+      </DescriptiveMetadata>
+      <ContentItem>
+        <MediaType FormalName="Text" />
+        <Format FormalName="NITF3.1" />
+        <Characteristics>
+          <Property FormalName="Words" Value="0" />
+        </Characteristics>
+        <DataContent>
+          <nitf>
+            <body>
+              <body.content>
+                <p>This is a paragraph.</p>
+              </body.content>
+            </body>
+          </nitf>
+        </DataContent>
+      </ContentItem>
+    </NewsComponent>
+  </NewsItem>
+</NewsML>
