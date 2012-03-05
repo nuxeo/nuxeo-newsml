@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.newsml.fileManagerContrib">
+  <extension
+    target="org.nuxeo.ecm.platform.filemanager.service.FileManagerService"
+    point="plugins">
+
+    <plugin name="NewsMLImporter" class="org.nuxeo.newsml.importer.NewsMLImporter"
+      order="5">
+      <filter>text/xml</filter>
+      <filter>application/xml</filter>
+    </plugin>
+  </extension>
+
+</component>
+
