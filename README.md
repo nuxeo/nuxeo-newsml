@@ -38,6 +38,10 @@ workspace and create a new document with type "NewsML Article". You can
 attach a NewsML file or type the body of the article. The two fields
 will keep in sync during later edits.
 
+The addon also contributes a custom importer for the FileManagerService
+so that any XML imported through drag and drop will be automatically
+interpreted as a NewsML document with sync mode enabled.
+
 
 ## About Nuxeo
 
