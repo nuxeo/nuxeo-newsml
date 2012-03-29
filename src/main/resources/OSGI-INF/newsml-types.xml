@@ -26,7 +26,7 @@
 
     <type id="NewsML">
       <label>NewsML Article</label>
-      <icon>/icons/note.png</icon>
+      <icon>/icons/note.gif</icon>
       <bigIcon>/icons/note_100.png</bigIcon>
       <icon-expanded>/icons/note.png</icon-expanded>
       <category>SimpleDocument</category>
