@@ -177,12 +177,12 @@ public class NewsMLCodec {
         return serialize(new DOMSource(doc));
     }
 
-    protected String serialize(Element element)
+    protected static String serialize(Element element)
             throws TransformerFactoryConfigurationError, TransformerException {
         return serialize(new DOMSource(element));
     }
 
-    protected String serialize(DOMSource source)
+    protected static String serialize(DOMSource source)
             throws TransformerFactoryConfigurationError, TransformerException {
         StringWriter output = new StringWriter();
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
@@ -280,6 +280,22 @@ public class NewsMLCodec {
             throws XPathExpressionException, PropertyException,
             ClientException, TransformerFactoryConfigurationError,
             TransformerException {
+        String htmlString = bodyFromXML(builder, xpath, domDoc);
+
+        // check whether this payload should be wrapped into a blob or not
+        Property property = doc.getProperty(bodyPath);
+        if ("content".equals(property.getType().getName())) {
+            Blob blob = StreamingBlob.createFromString(htmlString);
+            blob.setMimeType("text/html");
+            doc.setPropertyValue(bodyPath, (Serializable) blob);
+        } else {
+            doc.setPropertyValue(bodyPath, htmlString);
+        }
+    }
+
+    public static String bodyFromXML(DocumentBuilder builder, XPath xpath,
+            Document domDoc) throws XPathExpressionException,
+            TransformerFactoryConfigurationError, TransformerException {
         XPathExpression expr = xpath.compile("//body/body.content");
         // XXX: assume that there is only one ContentItem in the NewsML document
         Node bodyContentNode = (Node) expr.evaluate(domDoc, XPathConstants.NODE);
@@ -297,16 +313,19 @@ public class NewsMLCodec {
             }
         }
         String htmlString = serialize(htmlNode);
+        return htmlString;
+    }
 
-        // check whether this payload should be wrapped into a blob or not
-        Property property = doc.getProperty(bodyPath);
-        if ("content".equals(property.getType().getName())) {
-            Blob blob = StreamingBlob.createFromString(htmlString);
-            blob.setMimeType("text/html");
-            doc.setPropertyValue(bodyPath, (Serializable) blob);
-        } else {
-            doc.setPropertyValue(bodyPath, htmlString);
-        }
+    public static String extractHTMLBody(InputStream xml)
+            throws ParserConfigurationException, XPathExpressionException,
+            TransformerFactoryConfigurationError, TransformerException,
+            SAXException, IOException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        XPathFactory xFactory = XPathFactory.newInstance();
+        XPath xpath = xFactory.newXPath();
+        Document domDoc = builder.parse(xml);
+        return bodyFromXML(builder, xpath, domDoc);
     }
 
     public void synchronizeProperties(DocumentModel doc)

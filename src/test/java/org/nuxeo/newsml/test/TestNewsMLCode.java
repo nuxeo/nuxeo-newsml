@@ -161,4 +161,12 @@ public class TestNewsMLCode {
         assertEquals("This is the Headline.",
                 newsmlDoc.getPropertyValue("dc:title"));
     }
+
+
+    @Test
+    public void testHTMLBodyExtraction() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/newsml-test-file.xml");
+        String body = NewsMLCodec.extractHTMLBody(is);
+        assertTrue(body.contains("<p>This is a paragraph.</p>"));
+    }
 }
