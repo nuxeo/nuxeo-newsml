@@ -39,7 +39,11 @@ import com.google.inject.Inject;
 @RunWith(FeaturesRunner.class)
 @Features(CoreFeature.class)
 @RepositoryConfig(repositoryName = "default", user = "Administrator", cleanup = Granularity.CLASS)
-@Deploy("org.nuxeo.newsml")
+@Deploy({ "org.nuxeo.ecm.platform.audio.core", // NXP-10070
+        "org.nuxeo.ecm.platform.picture.core", // NXP-10070
+        "org.nuxeo.ecm.platform.video.core", // NXP-10070
+        "org.nuxeo.dam.core", // NXP-10070
+        "org.nuxeo.newsml" })
 public class TestNewsMLCode {
 
     @Inject
