@@ -338,8 +338,10 @@ public class NewsMLCodec {
         }
         Blob content = (Blob) doc.getPropertyValue(newsmlBlobProperty);
         if (content != null
-                && (content.getMimeType().equals("text/xml") || content.getMimeType().equals(
-                        "application/xml"))
+                && (content.getMimeType().equals("text/xml")
+                        || content.getMimeType().equals("application/xml")
+                        || content.getMimeType().equals("text/vnd.IPTC.NewsML") || content.getMimeType().equals(
+                        "application/newsml+xml"))
                 && doc.getProperty(newsmlBlobProperty).isDirty()) {
             // update the properties by parsing the blob content if not null
             propertiesFromXML(doc, content.getStream());

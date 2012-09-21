@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.newsml.mimetypes">
+
+  <extension
+    target="org.nuxeo.ecm.platform.mimetype.service.MimetypeRegistryService"
+    point="mimetype">
+
+    <mimetype normalized="text/vnd.IPTC.NewsML" binary="true" iconPath="xml.png">
+      <mimetypes>
+        <mimetype>text/vnd.IPTC.NewsML</mimetype>
+        <mimetype>application/newsml+xml</mimetype>
+      </mimetypes>
+      <extensions>
+        <extension>newsml</extension>
+      </extensions>
+    </mimetype>
+
+  </extension>
+
+</component>

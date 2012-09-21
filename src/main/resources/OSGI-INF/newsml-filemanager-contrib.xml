@@ -6,6 +6,8 @@
 
     <plugin name="NewsMLImporter" class="org.nuxeo.newsml.importer.NewsMLImporter"
       order="5">
+      <filter>text/vnd.IPTC.NewsML</filter>
+      <filter>application/newsml+xml</filter>
       <filter>text/xml</filter>
       <filter>application/xml</filter>
     </plugin>
