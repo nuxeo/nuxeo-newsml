@@ -42,7 +42,7 @@ import com.google.inject.Inject;
 @Deploy({ "org.nuxeo.ecm.platform.audio.core", // NXP-10070
         "org.nuxeo.ecm.platform.picture.core", // NXP-10070
         "org.nuxeo.ecm.platform.video.core", // NXP-10070
-        "org.nuxeo.dam.core", // NXP-10070
+        "org.nuxeo.dam.jsf:OSGI-INF/dam-core-types-contrib.xml", // NXP-10070
         "org.nuxeo.newsml" })
 public class TestNewsMLCode {
 

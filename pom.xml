@@ -23,7 +23,7 @@
     </dependency>
     <dependency>
       <groupId>org.nuxeo.dam</groupId>
-      <artifactId>nuxeo-dam-core</artifactId>
+      <artifactId>nuxeo-dam-jsf</artifactId>
       <version>5.7-SNAPSHOT</version>
     </dependency>
     <dependency>
